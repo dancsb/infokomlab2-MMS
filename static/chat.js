@@ -12,22 +12,24 @@ var remoteVideo = document.getElementById('remoteVideo');
 
 var calling = false;
 var signalling = new Signalling({
-  room: 'SZOBAAZONOSITO',
-  onMessage: null, // <<----- KI KELL TÖLTENI
-  signallingServer: 'https://IDE_JON_A_SIGNALLING_IP:3000'
+  room: 'k8s',
+  onMessage: onSignallingMessage, // <<----- KI KELL TÖLTENI
+  signallingServer: 'https://signalling.medianets.hu:3000'
 });
 
-var pc = new RTCPeerConnection();
+var pc = new RTCPeerConnection({
+  iceServers: [{urls: 'stun:freestun.net:5350'}]
+});
 
 callButton.disabled = true;
 setBandwidthButton.disabled = true;
 
-callButton.onclick = null;
-setBandwidthButton.onclick = null;
-pc.onicecandidate = null;
-pc.oniceconnectionstatechange = null;
+callButton.onclick = call;
+setBandwidthButton.onclick = setBandwidth;
+pc.onicecandidate = onLocalICECandidateGenerated;
+pc.oniceconnectionstatechange = onIceConnectionStateChange;
 
-pc.ontrack = null;
+pc.ontrack = gotRemoteStream;
 
 navigator.mediaDevices.getUserMedia({
   audio: false,
@@ -35,7 +37,7 @@ navigator.mediaDevices.getUserMedia({
     width: { min: 800 },
     height: { min: 600 }
   }
-}).then(null)
+}).then(gotLocalStream)
   .catch(onError);
 
 /*
@@ -47,7 +49,7 @@ function call() {
   calling = true;
 
   pc.createOffer()
-    .then(null)
+    .then(onCreateOfferSuccess)
     .catch(onError);
 }
 
@@ -71,7 +73,7 @@ function onSignallingMessage(msg) {
       callButton.disabled = true;
 
       pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(msg.data)))
-        .then(null)
+        .then(onSetRemoteDescriptionSuccess)
         .catch(onError);
       break;
 
@@ -82,7 +84,7 @@ function onSignallingMessage(msg) {
         candidate: msg.candidate});
 
       pc.addIceCandidate(candidate)
-        .then(null)
+        .then(onAddIceCandidateSuccess)
         .catch(onError);
       break;
   }
@@ -114,7 +116,7 @@ function onSetLocalDescriptionSuccess() {}
 function onSetRemoteDescriptionSuccess() {
   if(!calling) {
     pc.createAnswer()
-      .then(null)
+      .then(onCreateAnswerSuccess)
       .catch(onError);
   }
 }
@@ -124,8 +126,8 @@ function onSetRemoteDescriptionSuccess() {
  */
 
 function onCreateOfferSuccess(offer) {
-  pc.setLocalDescription(offer)
-    .then(null)
+    pc.setLocalDescription(offer)
+    .then(onSetLocalDescriptionSuccess)
     .catch(onError);
 
   signalling.send({
@@ -135,8 +137,8 @@ function onCreateOfferSuccess(offer) {
 }
 
 function onCreateAnswerSuccess(answer) {
-  pc.setLocalDescription(answer)
-    .then(null)
+    pc.setLocalDescription(answer)
+    .then(onSetLocalDescriptionSuccess)
     .catch(onError);
 
   signalling.send({
@@ -151,7 +153,7 @@ function onCreateAnswerSuccess(answer) {
 
 function onLocalICECandidateGenerated(event) {
   if (event.candidate) {
-    signalling.send({
+        signalling.send({
       type: 'ice_candidate',
       sdpMLineIndex: event.candidate.sdpMLineIndex,
       sdpMid: event.candidate.sdpMid,
