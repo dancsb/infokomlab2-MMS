@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Videochat</title>
+  <style type="text/css">
+    * {
+      box-sizing: border-box;
+    }
+
+    .videobox {
+      border-style: solid;
+      float: left;
+      width: 40%;
+      margin: 40px;
+      height: 500px;
+    }
+
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+
+    .videobox_header {
+      font-size: 2em;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    video {
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="clearfix">
+    <div class="videobox">
+      <p class="videobox_header">Caller</p>
+      <video id="localVideo" autoplay></video>
+    </div>
+    <div class="videobox">
+      <p class="videobox_header">Callee</p>
+      <video id="remoteVideo" autoplay></video>
+    </div>
+  </div>
+
+  <div>
+    <button id="callButton">Call</button><br/><br/>
+    Target bandwidth: <input type="text" id="targetBandwidth" name="fname"> kb/s
+    <button id="setBandwidthButton">Set</button>
+  </div>
+
+  <script src="js/adapter.js"></script>
+  <script src="js/socket.io.js"></script>
+  <script src="js/signalling.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>
